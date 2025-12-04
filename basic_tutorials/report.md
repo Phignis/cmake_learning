@@ -56,3 +56,42 @@ $ cmake -G 'Unix Makefiles' -B build/make ; cmake -G Ninja -B build/ninja
 ```
 
 ## Step 1
+
+One or more `CMakeLists.txt` can be used to describe and create the build system. Those files can also be refered as `CML` or `lists files`.
+
+A root CML is oftenly used, used as the entry point for other CML. It usually contains the guaranteed behaviour with `cmake_minimum_required(VERSION 4.2)`. It ensures CMake will behave as the wanted version. The command `project()` inform CMake you are building a complete software, with a proper name, and eventual versions, languages...
+
+Official CMake guidance recommand using lower-case for commands, opposite of SQL prefering upper-case.
+
+### Exercise 1 - Building an executable
+
+As said in step 0, `add_executable()` allows to create a target the created build system will have to compile into. This target may have dependancies, header and source files, but also compiler and linker flags. `target_sources()` allows to include source files to the executable. The visibility seen in step 0 (private) is the scope of the files qualified (in this case). PRIVATE means those files (and more generally any qualified property) is only used for building the target ; but not available when using it. INTERFACE means it is not used to build the target, but is available when using it. PUBLIC are both for building and available when using.
+
+When declaring the project, it is possible to declare the language, being either C, C++, C#, Obj-C, Obj-C++, Fortran, Swift, CUDA and various ASM for the most notable ones.
+
+When building the build system with `cmake -B build`, rather than invoking the specific build command (make in my case), you can also invoke `cmake --build build`. This will invoke the proper build command, effectively and fully abstracting out the build system.
+
+### Exercise 2 - Building a library
+
+Libraries are a core component of middle and large scale project. Therefore, it is needed to understand how it differs from executable. Unlike executable, never meant to be used by another part of the project, explaining why all properties of a project should be in PRIVATE, libraries are meant to be used. When using libraries such as the std in C++, you include the header file, but the source file is not needed in itself, as it is pre-compiled in object files.
+
+Therefore, the library headers must be PUBLIC, as they are needed when library is used, and not when compiled.
+The `BASE_DIRS` property of the `FILE_SET` allow to include in code headers directly from this base dir, without having to precise the whole relative path.
+Once the project fully built, the file `libMathFunctions.a` can be found, which is the static library created from the object files compiled from source.
+
+### Exercise 3 - Linking libraries and executables
+
+`target_link_libraries()` is used to describe relations between all target. In our case, it can be used to link a library when compiling an executable.
+All properties of target are set to named values. Interface headers will for instance be added to the value `INTERFACE_HEADER_SETS`, private ones to `HEADER_SETS` and public ones to both.
+All non-interface properties are used to build the target in itself, along with the interfaces of any used targets.
+
+Once the library added to the executable, we can directly `#include <MathFunctions.h>`, as the base dir is set to the MathFunctions. This adds to the compiler all base dirs as sources to search for libraries, alike `/usr/lib` and `/lib`.
+
+Something noticeable is that linking a depencency that is yet to be created isn't issuing with an error. Similarly to OOP and unlike C functions, the evaluation is not a top-down one.
+
+### Exercise 4 - Subdirectories
+
+As said in the beginning of this step, you may have multiple CMLs, allowing to seperate the build system structure. To do so, you can use `add_subdirectory()`, which will indicate a second CML is present.
+
+Once build again with the argument `--clean-first` because we changed the structure (same as when changing generator), the build directory will contain the new subdirectories, with the executable in the Tutorial one.
+
